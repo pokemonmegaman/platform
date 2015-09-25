@@ -4,12 +4,10 @@ var BrowserStore = require('../stores/browser_store.jsx');
 var TeamStore = require('../stores/team_store.jsx');
 
 export function track(category, action, label, prop, val) {
-    global.window.snowplow('trackStructEvent', category, action, label, prop, val);
     global.window.analytics.track(action, {category: category, label: label, property: prop, value: val});
 }
 
 export function trackPage() {
-    global.window.snowplow('trackPageView');
     global.window.analytics.page();
 }
 
@@ -329,6 +327,35 @@ export function saveConfig(config, success, error) {
         success,
         error: function onError(xhr, status, err) {
             var e = handleError('saveConfig', xhr, status, err);
+            error(e);
+        }
+    });
+}
+
+export function testEmail(config, success, error) {
+    $.ajax({
+        url: '/api/v1/admin/test_email',
+        dataType: 'json',
+        contentType: 'application/json',
+        type: 'POST',
+        data: JSON.stringify(config),
+        success,
+        error: function onError(xhr, status, err) {
+            var e = handleError('testEmail', xhr, status, err);
+            error(e);
+        }
+    });
+}
+
+export function getAllTeams(success, error) {
+    $.ajax({
+        url: '/api/v1/teams/all',
+        dataType: 'json',
+        contentType: 'application/json',
+        type: 'GET',
+        success,
+        error: function onError(xhr, status, err) {
+            var e = handleError('getAllTeams', xhr, status, err);
             error(e);
         }
     });
@@ -877,6 +904,21 @@ export function getProfiles(success, error) {
     });
 }
 
+export function getProfilesForTeam(teamId, success, error) {
+    $.ajax({
+        cache: false,
+        url: '/api/v1/users/profiles/' + teamId,
+        dataType: 'json',
+        contentType: 'application/json',
+        type: 'GET',
+        success,
+        error: function onError(xhr, status, err) {
+            var e = handleError('getProfilesForTeam', xhr, status, err);
+            error(e);
+        }
+    });
+}
+
 export function uploadFile(formData, success, error) {
     var request = $.ajax({
         url: '/api/v1/files/upload',
@@ -998,23 +1040,6 @@ export function getMyTeam(success, error) {
             error(e);
         }
     });
-}
-
-export function updateValetFeature(data, success, error) {
-    $.ajax({
-        url: '/api/v1/teams/update_valet_feature',
-        dataType: 'json',
-        contentType: 'application/json',
-        type: 'POST',
-        data: JSON.stringify(data),
-        success,
-        error: function onError(xhr, status, err) {
-            var e = handleError('updateValetFeature', xhr, status, err);
-            error(e);
-        }
-    });
-
-    track('api', 'api_teams_update_valet_feature');
 }
 
 export function registerOAuthApp(app, success, error) {

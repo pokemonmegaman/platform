@@ -38,7 +38,7 @@ export default class UserSettingsModal extends React.Component {
         if (global.window.config.EnableOAuthServiceProvider === 'true') {
             tabs.push({name: 'developer', uiName: 'Developer', icon: 'glyphicon glyphicon-th'});
         }
-        if (global.window.config.AllowIncomingWebhooks === 'true') {
+        if (global.window.config.EnableIncomingWebhooks === 'true') {
             tabs.push({name: 'integrations', uiName: 'Integrations', icon: 'glyphicon glyphicon-transfer'});
         }
 
@@ -60,7 +60,7 @@ export default class UserSettingsModal extends React.Component {
                         data-dismiss='modal'
                         aria-label='Close'
                     >
-                        <span aria-hidden='true'>{'x'}</span>
+                        <span aria-hidden='true'>{'×'}</span>
                     </button>
                     <h4
                         className='modal-title'

@@ -23,7 +23,6 @@ const (
 	USER_NOTIFY_ALL      = "all"
 	USER_NOTIFY_MENTION  = "mention"
 	USER_NOTIFY_NONE     = "none"
-	BOT_USERNAME         = "valet"
 )
 
 type User struct {
@@ -47,6 +46,7 @@ type User struct {
 	AllowMarketing     bool      `json:"allow_marketing"`
 	Props              StringMap `json:"props"`
 	NotifyProps        StringMap `json:"notify_props"`
+	ThemeProps         StringMap `json:"theme_props"`
 	LastPasswordUpdate int64     `json:"last_password_update"`
 	LastPictureUpdate  int64     `json:"last_picture_update"`
 	FailedAttempts     int       `json:"failed_attempts"`
@@ -106,6 +106,10 @@ func (u *User) IsValid() *AppError {
 
 	if len(u.Password) > 0 && len(u.AuthData) > 0 {
 		return NewAppError("User.IsValid", "Invalid user, password and auth data cannot both be set", "user_id="+u.Id)
+	}
+
+	if len(u.ThemeProps) > 2000 {
+		return NewAppError("User.IsValid", "Invalid theme", "user_id="+u.Id)
 	}
 
 	return nil

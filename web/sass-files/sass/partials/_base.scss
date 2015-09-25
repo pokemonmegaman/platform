@@ -34,20 +34,27 @@ body {
   }
 }
 
-b, strong {
-  font-weight: 600;
+.popover {
+  color: #333;
+  a {
+    color: $primary-color;
+    &:hover, &:focus {
+      color: $primary-color;
+    }
+  }
+}
+
+.word-break--all {
+    word-break: break-all;
 }
 
 a {
   word-break: break-word;
-}
-
-a.theme {
   color: $primary-color;
 }
 
-div.theme {
-  background-color: $primary-color;
+a:focus, a:hover {
+  color: $primary-color;
 }
 
 .tooltip {

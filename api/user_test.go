@@ -151,7 +151,7 @@ func TestLogin(t *testing.T) {
 	props["display_name"] = rteam2.Data.(*model.Team).DisplayName
 	props["time"] = fmt.Sprintf("%v", model.GetMillis())
 	data := model.MapToJson(props)
-	hash := model.HashPassword(fmt.Sprintf("%v:%v", data, utils.Cfg.ServiceSettings.InviteSalt))
+	hash := model.HashPassword(fmt.Sprintf("%v:%v", data, utils.Cfg.EmailSettings.InviteSalt))
 
 	ruser2, _ := Client.CreateUserFromSignup(&user2, data, hash)
 
@@ -228,6 +228,13 @@ func TestGetUser(t *testing.T) {
 	ruser2, _ := Client.CreateUser(&user2, "")
 	store.Must(Srv.Store.User().VerifyEmail(ruser2.Data.(*model.User).Id))
 
+	team2 := model.Team{DisplayName: "Name", Name: "z-z-" + model.NewId() + "a", Email: "test@nowhere.com", Type: model.TEAM_OPEN}
+	rteam2, _ := Client.CreateTeam(&team2)
+
+	user3 := model.User{TeamId: rteam2.Data.(*model.Team).Id, Email: strings.ToLower(model.NewId()) + "corey@test.com", Nickname: "Corey Hulen", Password: "pwd"}
+	ruser3, _ := Client.CreateUser(&user3, "")
+	store.Must(Srv.Store.User().VerifyEmail(ruser3.Data.(*model.User).Id))
+
 	Client.LoginByEmail(team.Name, user.Email, user.Password)
 
 	rId := ruser.Data.(*model.User).Id
@@ -276,12 +283,26 @@ func TestGetUser(t *testing.T) {
 			t.Log(cache_result.Data)
 			t.Fatal("cache should be empty")
 		}
+	}
 
+	if _, err := Client.GetProfiles(rteam2.Data.(*model.Team).Id, ""); err == nil {
+		t.Fatal("shouldn't have access")
 	}
 
 	Client.AuthToken = ""
 	if _, err := Client.GetUser(ruser2.Data.(*model.User).Id, ""); err == nil {
 		t.Fatal("shouldn't have accss")
+	}
+
+	c := &Context{}
+	c.RequestId = model.NewId()
+	c.IpAddress = "cmd_line"
+	UpdateRoles(c, ruser.Data.(*model.User), model.ROLE_SYSTEM_ADMIN)
+
+	Client.LoginByEmail(team.Name, user.Email, "pwd")
+
+	if _, err := Client.GetProfiles(rteam2.Data.(*model.Team).Id, ""); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -352,19 +373,19 @@ func TestUserCreateImage(t *testing.T) {
 
 	Client.DoApiGet("/users/"+user.Id+"/image", "", "")
 
-	if utils.IsS3Configured() && !utils.Cfg.ServiceSettings.UseLocalStorage {
+	if utils.Cfg.FileSettings.DriverName == model.IMAGE_DRIVER_S3 {
 		var auth aws.Auth
-		auth.AccessKey = utils.Cfg.AWSSettings.S3AccessKeyId
-		auth.SecretKey = utils.Cfg.AWSSettings.S3SecretAccessKey
+		auth.AccessKey = utils.Cfg.FileSettings.AmazonS3AccessKeyId
+		auth.SecretKey = utils.Cfg.FileSettings.AmazonS3SecretAccessKey
 
-		s := s3.New(auth, aws.Regions[utils.Cfg.AWSSettings.S3Region])
-		bucket := s.Bucket(utils.Cfg.AWSSettings.S3Bucket)
+		s := s3.New(auth, aws.Regions[utils.Cfg.FileSettings.AmazonS3Region])
+		bucket := s.Bucket(utils.Cfg.FileSettings.AmazonS3Bucket)
 
 		if err := bucket.Del("teams/" + user.TeamId + "/users/" + user.Id + "/profile.png"); err != nil {
 			t.Fatal(err)
 		}
 	} else {
-		path := utils.Cfg.ServiceSettings.StorageDirectory + "teams/" + user.TeamId + "/users/" + user.Id + "/profile.png"
+		path := utils.Cfg.FileSettings.Directory + "teams/" + user.TeamId + "/users/" + user.Id + "/profile.png"
 		if err := os.Remove(path); err != nil {
 			t.Fatal("Couldn't remove file at " + path)
 		}
@@ -382,7 +403,7 @@ func TestUserUploadProfileImage(t *testing.T) {
 	user = Client.Must(Client.CreateUser(user, "")).Data.(*model.User)
 	store.Must(Srv.Store.User().VerifyEmail(user.Id))
 
-	if utils.IsS3Configured() || utils.Cfg.ServiceSettings.UseLocalStorage {
+	if utils.Cfg.FileSettings.DriverName != "" {
 
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
@@ -450,19 +471,19 @@ func TestUserUploadProfileImage(t *testing.T) {
 
 		Client.DoApiGet("/users/"+user.Id+"/image", "", "")
 
-		if utils.IsS3Configured() && !utils.Cfg.ServiceSettings.UseLocalStorage {
+		if utils.Cfg.FileSettings.DriverName == model.IMAGE_DRIVER_S3 {
 			var auth aws.Auth
-			auth.AccessKey = utils.Cfg.AWSSettings.S3AccessKeyId
-			auth.SecretKey = utils.Cfg.AWSSettings.S3SecretAccessKey
+			auth.AccessKey = utils.Cfg.FileSettings.AmazonS3AccessKeyId
+			auth.SecretKey = utils.Cfg.FileSettings.AmazonS3SecretAccessKey
 
-			s := s3.New(auth, aws.Regions[utils.Cfg.AWSSettings.S3Region])
-			bucket := s.Bucket(utils.Cfg.AWSSettings.S3Bucket)
+			s := s3.New(auth, aws.Regions[utils.Cfg.FileSettings.AmazonS3Region])
+			bucket := s.Bucket(utils.Cfg.FileSettings.AmazonS3Bucket)
 
 			if err := bucket.Del("teams/" + user.TeamId + "/users/" + user.Id + "/profile.png"); err != nil {
 				t.Fatal(err)
 			}
 		} else {
-			path := utils.Cfg.ServiceSettings.StorageDirectory + "teams/" + user.TeamId + "/users/" + user.Id + "/profile.png"
+			path := utils.Cfg.FileSettings.Directory + "teams/" + user.TeamId + "/users/" + user.Id + "/profile.png"
 			if err := os.Remove(path); err != nil {
 				t.Fatal("Couldn't remove file at " + path)
 			}
@@ -814,7 +835,7 @@ func TestResetPassword(t *testing.T) {
 	props["user_id"] = user.Id
 	props["time"] = fmt.Sprintf("%v", model.GetMillis())
 	data["data"] = model.MapToJson(props)
-	data["hash"] = model.HashPassword(fmt.Sprintf("%v:%v", data["data"], utils.Cfg.ServiceSettings.ResetSalt))
+	data["hash"] = model.HashPassword(fmt.Sprintf("%v:%v", data["data"], utils.Cfg.EmailSettings.PasswordResetSalt))
 	data["name"] = team.Name
 
 	if _, err := Client.ResetPassword(data); err != nil {
@@ -952,6 +973,7 @@ func TestUserUpdateNotify(t *testing.T) {
 }
 
 func TestFuzzyUserCreate(t *testing.T) {
+	Setup()
 
 	team := model.Team{DisplayName: "Name", Name: "z-z-" + model.NewId() + "a", Email: "test@nowhere.com", Type: model.TEAM_OPEN}
 	rteam, _ := Client.CreateTeam(&team)

@@ -32,6 +32,7 @@
     }
     .settings-table {
         display: table;
+        table-layout: fixed;
         width: 100%;
         > div {
             display: table-cell;
@@ -79,6 +80,36 @@
                 }
             }
 
+            .appearance-section {
+                .premade-themes {
+                    .theme-label {
+                        font-weight: 400;
+                        margin-top: 5px;
+                    }
+                    img {
+                        border: 3px solid transparent;
+                    }
+                    .active {
+                        img {
+                            border-color: $primary-color;
+                        }
+                    }
+                }
+                .custom-label {
+                    font-weight: normal;
+                    font-size: 13px;
+                    width: 100%;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    margin-bottom: 0;
+                }
+                .radio {
+                    label {
+                        font-weight: 600;
+                    }
+                }
+            }
+
             .section-title {
                 margin-bottom: 5px;
                 font-weight: 600;
@@ -93,6 +124,10 @@
                     color: #aaa;
                     display: none;
                 }
+            }
+
+            .font--small {
+                font-size: 13px;
             }
 
             .section-describe {
@@ -125,8 +160,18 @@
                 .has-error {
                     color: #a94442;
                 }
+                .padding-top {
+                    padding-top: 7px;
+                    &.x2 {
+                        padding-top: 14px;
+                    }
+                }
                 .control-label {
                     color: #555;
+                    font-weight: 600;
+                    &.text-left {
+                        text-align: left;
+                    }
                 }
                 hr {
                     border-color: #ccc;

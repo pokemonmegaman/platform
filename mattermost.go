@@ -57,7 +57,7 @@ func main() {
 		api.StartServer()
 
 		// If we allow testing then listen for manual testing URL hits
-		if utils.Cfg.ServiceSettings.AllowTesting {
+		if utils.Cfg.ServiceSettings.EnableTesting {
 			manualtesting.InitManualTesting()
 		}
 
@@ -325,10 +325,10 @@ Usage:
 
     -role="admin"                     The role used in other commands
                                       valid values are
-                                        "" - The empty role is basic user 
+                                        "" - The empty role is basic user
                                            permissions
                                         "admin" - Represents a team admin and
-                                           is used to help adminsiter one team.
+                                           is used to help administer one team.
                                         "system_admin" - Represents a system
                                            admin who has access to all teams
                                            and configuration settings.  This

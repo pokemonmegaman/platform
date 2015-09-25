@@ -42,7 +42,7 @@ func TestUserStoreSave(t *testing.T) {
 		t.Fatal("should be unique username")
 	}
 
-	for i := 0; i < 150; i++ {
+	for i := 0; i < 50; i++ {
 		u1.Id = ""
 		u1.Email = model.NewId()
 		u1.Username = model.NewId()
@@ -203,6 +203,24 @@ func TestUserStoreGet(t *testing.T) {
 
 	if err := (<-store.User().Get("")).Err; err == nil {
 		t.Fatal("Missing id should have failed")
+	}
+}
+
+func TestUserCountt(t *testing.T) {
+	Setup()
+
+	u1 := model.User{}
+	u1.TeamId = model.NewId()
+	u1.Email = model.NewId()
+	Must(store.User().Save(&u1))
+
+	if result := <-store.User().GetTotalUsersCount(); result.Err != nil {
+		t.Fatal(result.Err)
+	} else {
+		count := result.Data.(int64)
+		if count <= 0 {
+			t.Fatal()
+		}
 	}
 }
 

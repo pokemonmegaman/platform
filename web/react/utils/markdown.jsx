@@ -9,10 +9,25 @@ export class MattermostMarkdownRenderer extends marked.Renderer {
     constructor(options, formattingOptions = {}) {
         super(options);
 
+        this.heading = this.heading.bind(this);
         this.text = this.text.bind(this);
 
         this.formattingOptions = formattingOptions;
     }
+
+    br() {
+        if (this.formattingOptions.singleline) {
+            return ' ';
+        }
+
+        return super.br();
+    }
+
+    heading(text, level, raw) {
+        const id = `${this.options.headerPrefix}${raw.toLowerCase().replace(/[^\w]+/g, '-')}`;
+        return `<h${level} id="${id}" class="markdown__heading">${text}</h${level}>`;
+    }
+
     link(href, title, text) {
         let outHref = href;
 
@@ -20,13 +35,25 @@ export class MattermostMarkdownRenderer extends marked.Renderer {
             outHref = `http://${outHref}`;
         }
 
-        let output = '<a class="theme" href="' + outHref + '"';
+        let output = '<a class="theme markdown__link" href="' + outHref + '"';
         if (title) {
             output += ' title="' + title + '"';
         }
-        output += '>' + text + '</a>';
+        output += ' target="_blank">' + text + '</a>';
 
         return output;
+    }
+
+    paragraph(text) {
+        if (this.formattingOptions.singleline) {
+            return `<p class="markdown__paragraph-inline">${text}</p>`;
+        }
+
+        return super.paragraph(text);
+    }
+
+    table(header, body) {
+        return `<table class="markdown__table"><thead>${header}</thead><tbody>${body}</tbody></table>`;
     }
 
     text(text) {
